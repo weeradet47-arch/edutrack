@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดเก็บคะแนนและเช็คชื่อนักเรียน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo">🎓</div>
+                <h2>ระบบจัดเก็บคะแนนและเช็ค</h2>
+            </div>
+            <nav class="menu">
+                <button class="menu-item active" data-page="dashboard">
+                    <span class="icon">📊</span> แดชบอร์ด
+                </button>
+                <button class="menu-item" data-page="manage-class">
+                    <span class="icon">🏫</span> จัดการห้องเรียน
+                </button>
+                <button class="menu-item" data-page="manage-students">
+                    <span class="icon">👥</span> จัดการนักเรียน
+                </button>
+                <button class="menu-item" data-page="attendance">
+                    <span class="icon">📅</span> เช็คชื่อ
+                </button>
+                <button class="menu-item" data-page="grades">
+                    <span class="icon">📝</span> เก็บคะแนน
+                </button>
+                <button class="menu-item" data-page="settings">
+                    <span class="icon">⚙️</span> ตั้งค่า
+                </button>
+            </nav>
+            <div class="teacher-info">
+                <div class="avatar">👨‍🏫</div>
+                <div class="details">
+                    <span class="label">ครูผู้สอน</span>
+                    <strong id="teacher-name-display">ยังไม่ได้ตั้งชื่อ</strong>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <section id="dashboard" class="page active">
+                <header class="page-header">
+                    <h1>ยินดีต้อนรับสู่ EduTrack</h1>
+                    <p>ระบบจัดการชั้นเรียนที่ใช้งานง่ายที่สุด</p>
+                </header>
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">🏫</div>
+                        <div class="stat-info">
+                            <h3>จำนวนห้องเรียน</h3>
+                            <p id="stat-classes">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <h3>จำนวนนักเรียนรวม</h3>
+                            <p id="stat-students">0</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Manage Classes Page -->
+            <section id="manage-class" class="page">
+                <header class="page-header">
+                    <h1>จัดการห้องเรียน</h1>
+                    <button class="btn btn-primary" onclick="app.showAddClassModal()">+ เพิ่มห้องเรียนใหม่</button>
+                </header>
+                <div class="card-grid" id="class-list-container">
+                    <!-- Class cards will be generated here -->
+                </div>
+            </section>
+
+            <!-- Manage Students Page -->
+            <section id="manage-students" class="page">
+                <header class="page-header">
+                    <h1>จัดการนักเรียน</h1>
+                    <div class="header-actions">
+                        <select id="student-class-select" class="form-select" onchange="app.renderStudentList()">
+                            <option value="">-- เลือกห้องเรียน --</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="app.showAddStudentModal()">+ เพิ่มนักเรียน</button>
+                    </div>
+                </header>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ลำดับที่</th>
+                                <th>รหัสนักเรียน</th>
+                                <th>ชื่อ - นามสกุล</th>
+                                <th class="text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-table-body">
+                            <!-- Students will be listed here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Attendance Page -->
+            <section id="attendance" class="page">
+                <header class="page-header">
+                    <h1>ระบบเช็คชื่อ</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-outline" id="btn-check-all" style="display:none;"
+                            onclick="app.checkAllPresent()">✅ ติ๊ก 'มา' ทั้งหมด</button>
+                        <input type="date" id="attendance-date" class="form-input"
+                            onchange="app.renderAttendanceList()">
+                        <select id="attendance-class-select" class="form-select" onchange="app.renderAttendanceList()">
+                            <option value="">-- เลือกห้องเรียน --</option>
+                        </select>
+                    </div>
+                </header>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ลำดับที่</th>
+                                <th>ชื่อ - นามสกุล</th>
+                                <th class="text-center">มา</th>
+                                <th class="text-center">ลา</th>
+                                <th class="text-center">ขาด</th>
+                                <th class="text-center">โดด</th>
+                                <th class="text-center">คะแนนรวม</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body">
+                            <!-- Attendance rows here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="action-bar mt-4" id="attendance-action-bar" style="display: none;">
+                    <button class="btn btn-success" onclick="app.saveAttendance()">บันทึกข้อมูลการเช็คชื่อ</button>
+                    <button class="btn btn-outline" onclick="app.exportAttendanceExcel()">📥 ส่งออกเป็น Excel</button>
+                </div>
+            </section>
+
+            <!-- Grades Page -->
+            <section id="grades" class="page">
+                <header class="page-header">
+                    <h1>เก็บคะแนน</h1>
+                    <div class="header-actions">
+                        <select id="grade-class-select" class="form-select" onchange="app.renderGrades()">
+                            <option value="">-- เลือกห้องเรียน --</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="app.showAddGradeColumnModal()">+
+                            สร้างช่องคะแนน</button>
+                    </div>
+                </header>
+                <div class="table-container table-responsive">
+                    <table class="data-table" id="grades-table">
+                        <thead id="grades-table-head">
+                            <!-- Grade columns here -->
+                        </thead>
+                        <tbody id="grades-table-body">
+                            <!-- Grade rows here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="action-bar mt-4" id="grades-action-bar" style="display: none;">
+                    <button class="btn btn-success" onclick="app.saveGrades()">บันทึกคะแนน</button>
+                    <button class="btn btn-outline" onclick="app.exportGradesExcel()">📥 ส่งออกเป็น Excel</button>
+                </div>
+            </section>
+
+            <!-- Settings Page -->
+            <section id="settings" class="page">
+                <header class="page-header">
+                    <h1>ตั้งค่าระบบ</h1>
+                </header>
+                <div class="settings-card">
+                    <div class="form-group">
+                        <label>ชื่อครูผู้สอน</label>
+                        <input type="text" id="setting-teacher-name" class="form-input" placeholder="ระบุชื่อครูผู้สอน">
+                    </div>
+
+                    <hr class="divider">
+
+                    <h3>ตั้งค่าคะแนนเช็คชื่อ</h3>
+                    <p class="text-muted mb-4">กำหนดคะแนนที่จะได้รับในแต่ละสถานะ</p>
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label>มา (คะแนน)</label>
+                            <input type="number" step="0.1" id="setting-pts-present" class="form-input">
+                        </div>
+                        <div>
+                            <label>ลา (คะแนน)</label>
+                            <input type="number" step="0.1" id="setting-pts-leave" class="form-input">
+                        </div>
+                        <div>
+                            <label>ขาด (คะแนน)</label>
+                            <input type="number" step="0.1" id="setting-pts-absent" class="form-input">
+                        </div>
+                        <div>
+                            <label>โดด (คะแนน)</label>
+                            <input type="number" step="0.1" id="setting-pts-skip" class="form-input">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary mt-2" onclick="app.saveSettings()">บันทึกการตั้งค่า</button>
+
+                    <hr class="divider">
+
+                    <h3>จัดการข้อมูล (อันตราย)</h3>
+                    <p class="text-muted mb-4">การลบข้อมูลทั้งหมดจะไม่สามารถกู้คืนได้</p>
+                    <button class="btn btn-danger" onclick="app.clearAllData()">🗑️ ลบข้อมูลทั้งหมด</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Class Modal -->
+    <div class="modal" id="class-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>เพิ่มห้องเรียนใหม่</h2>
+                <span class="close" onclick="app.closeModal('class-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>ชื่อห้องเรียน (เช่น ม.1/1)</label>
+                    <input type="text" id="new-class-name" class="form-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="app.closeModal('class-modal')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="app.saveClass()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div class="modal" id="student-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="student-modal-title">เพิ่มนักเรียน</h2>
+                <span class="close" onclick="app.closeModal('student-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="student-id-hidden">
+                <div class="form-group">
+                    <label>ลำดับที่</label>
+                    <input type="number" id="student-order" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>รหัสนักเรียน</label>
+                    <input type="text" id="student-code" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>คำนำหน้าชื่อ</label>
+                    <select id="student-prefix" class="form-select">
+                        <option value="ด.ช.">เด็กชาย (ด.ช.)</option>
+                        <option value="ด.ญ.">เด็กหญิง (ด.ญ.)</option>
+                        <option value="นาย">นาย</option>
+                        <option value="นางสาว">นางสาว</option>
+                        <option value="">(ไม่ระบุ)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ชื่อ - นามสกุล</label>
+                    <input type="text" id="student-fullname" class="form-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="app.closeModal('student-modal')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="app.saveStudent()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Grade Column Modal -->
+    <div class="modal" id="grade-column-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="grade-modal-title">สร้างช่องเก็บคะแนน</h2>
+                <span class="close" onclick="app.closeModal('grade-column-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="grade-col-id-hidden">
+                <div class="form-group">
+                    <label>ชื่อคะแนน (เช่น สอบกลางภาค, การบ้าน 1)</label>
+                    <input type="text" id="grade-col-name" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>คะแนนเต็ม</label>
+                    <input type="number" id="grade-col-max" class="form-input" min="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btn-delete-grade-col" style="display:none; margin-right: auto;"
+                    onclick="app.deleteCurrentGradeColumn()">ลบ</button>
+                <button class="btn btn-outline" onclick="app.closeModal('grade-column-modal')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="app.saveGradeColumn()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
